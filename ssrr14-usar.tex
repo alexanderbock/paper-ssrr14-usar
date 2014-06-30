@@ -1,4 +1,5 @@
 \documentclass[conference,10pt,letter]{IEEEtran}
+%\documentclass[peerreview, 10pt, letter]{IEEEtran}
 
 \usepackage{url}
 \usepackage{mathptmx}
@@ -60,7 +61,8 @@
 
 \begin{document}
 
-\title{Decision-Support for Urban Search \& Rescue Mission Planning\\ through Visualization-Based Analysis}
+\title{An Interactive Visualization System \\%
+for Urban Search \& Rescue Mission Planning}
 
 % author names and affiliations
 % use a multiple column layout for up to three different
@@ -69,25 +71,25 @@
     \IEEEauthorblockN{Alexander Bock}
     \IEEEauthorblockA{Scientific Visualization Group\\%
                       Link\"oping University\\%
-                      Email: alexander.bock@liu.se
+                      {\script alexander.bock@liu.se}
     }
     \and
     \IEEEauthorblockN{Alexander Kleiner}
     \IEEEauthorblockA{Collaborative Robotics Group\\%
                       Link\"oping University\\%
-                      Email: alexander.kleiner@liu.se
+                      {\script alexander.kleiner@liu.se}
     }
     \and
     \IEEEauthorblockN{Jonas Lundberg}
     \IEEEauthorblockA{Graphic Design Group\\%
                       Link\"oping University\\%
-                      Email: jonas.lundberg@liu.se
+                      {\script jonas.lundberg@liu.se}
     }
     \and
     \IEEEauthorblockN{Timo Ropinski}
     \IEEEauthorblockA{Scientific Visualization Group\\%
                       Link\"oping University\\%
-                      Email: timo.ropinski@liu.se
+                      {\script timo.ropinski@liu.se}
     }
 }
 
@@ -99,7 +101,7 @@
 
 
 \begin{abstract}
-We propose a visualization system for incident commanders in urban search~\&~rescue scenarios that supports access path planning for post-disaster structures. Utilizing point cloud data acquired from unmanned robots, we combine visualization with visual analytics methods to allow for assessment of automatically generated paths. Data uncertainty and a priori unknown information make fully automated systems impractical for this problem and call for interaction with an expert user. To this end, we present a set of viable access paths, whose computation is based on varying risk factors, to the incident commander in a 3D environment combined with the visual analysis tools to inspect paths in detail and make informed decisions and trade-offs. Based on these decisions, a responder is guided along the path by the incident commander, who can interactively annotate and reevaluate the acquired point cloud to react to the dynamics of the situation. We describe design considerations for our system, its technical realization, and discuss the results of an expert evaluation, which we conducted to assess the usefulness of our system.
+We present a visualization system for incident commanders in urban search~\&~rescue scenarios that supports inspection of and access path planning for post-disaster structures. Utilizing point cloud data acquired from unmanned robots, the system allows for assessment of automatically generated paths, whose computation is based on varying risk factors, in an interactive 3D environment. The incident commander  can interactively annotate and reevaluate the acquired point cloud based on feedback from the rescue responders. We describe design considerations for our system, its technical realization, and discuss the results of an expert evaluation that we conducted to assess the usefulness of our system.
 \end{abstract}
 
 
@@ -115,85 +117,74 @@ We propose a visualization system for incident commanders in urban search~\&~res
 
 \section{Introduction}
 
-Natural and man-made disasters causing structural damage to inhabited buildings are an ever-present danger. As time-to-rescue is one of the most important factors that determines victims' survivability, it is of highest importance for the rescue responders to reach victims as fast as possible in order to provide medical attention or extraction. Planning and executing optimal paths through buildings is, however, difficult as structural damage makes available floor plans outdated. Furthermore, structural weaknesses as well as hazardous environments, can make localized regions or whole areas inaccessible. While trained responders can use their knowledge and intuition to spot these hazards, it is paramount that the \emph{Incident Commander} (IC), who has global information about the building, can analyze the information and coordinate multiple rescue responders. Naturally, computer support systems involving expert users can help to tackle this challenge. In order to design a system that effectively amplifies human decision-making, it is vital to consider how decisions in dynamic unpredictable situations are made~\cite{Lundberg2012}. The system can then be designed to support planning based on experience, to increase quality of control, and to support decision-making, not only with regard to expected decisions, but also considering unexpected developments.
+Structural damage caused by disasters is an ever-present danger. As victims' survivability is mostly determined by the time-to-rescue, it is of great importance to provide medical attention or extraction as fast as possible. Planning access paths is, however, difficult as structural damage makes available floor plans outdated. While trained responders can use their knowledge and intuition to spot these hazards, it is paramount that the \emph{Incident Commander} (IC) can analyze the information and coordinate multiple rescue responders.
 
-There are well-defined protocols in place to describe the actions taken during an \emph{Urban Search~\&~Rescue} (USAR) operation. The Federal Emergency Management Agency describes five steps that are performed by the rescue team~\cite{fema08}. During the assessment step, 2D maps of the collapsed building are hand-drawn, based on the descriptions of rescue responders who are moving within the building searching for victims. In this exploration phase, they might stumble into hazardous areas, for example gas leaks, that endanger the rescuer's life. Even though the guidelines require these sketches to include a cross section of the building, a drawing of an unstructured 3D building is inaccurate and ineffective to construct a comprehensive mental model, yet this is the currently employed technique.
+There exist well-defined protocols to describe the actions taken during an \emph{Urban Search~\&~Rescue} (USAR) operation. In the assessment step, 2D maps of the collapsed building are hand-drawn, based on the descriptions of rescue responders who are moving within the building searching for victims, possibly stumbling into hazardous areas, for example gas leaks, that endanger the rescuer's life. In recent years, technological developments made it possible to use unmanned vehicles to perform this initial exploration. The robots are equipped with sensors that can detect victims, gather information about potentially hazardous environments, and perform detailed scans of rooms to create a comprehensive 3D point cloud of the building's interior. After the map has been acquired, the \IC\ can inspect the building and plan access paths that lead to certain \emph{Points of Interest} (POIs). In most cases, these are potential locations of victims, but they can also be other mission critical areas that need to be reached and analyzed.
 
-In recent years, technological developments made it possible to use ground-based unmanned vehicles to perform the initial exploration. The robots can be deployed into the building and are equipped with sensors that can detect victims, gather information about potentially hazardous environments, and perform detailed scans of rooms to create a 3D point cloud of the building's interior. These unstructured point clouds are collated and co-registered in real-time to produce a consistent map of the building. Using simultaneous localization and mapping algorithms (SLAM)~\cite{Dissanayake01asolution, Ziparo459917}, these maps are used by the robots to navigate buildings while exploring accessible areas. After the map has been acquired, the \IC\ can analyze the collected data and plan viable access paths for the rescue responders that enter the building to reach certain \emph{Points of Interest} (POIs). In most cases, these POIs are potential locations of victims, but they can also be other mission critical areas that need to be reached and analyzed.
-
-In this paper, we propose a visualization system that uses the acquired and annotated map during USAR missions to support access path planning. The system preprocesses the point cloud data to create an interactive 3D rendering that is tailored to increase the commander's spatial awareness of the internal structures (see Figure~\ref{fig:teaser}~(a-c)) and further support the analysis and planning of viable access paths (see Figure~\ref{fig:teaser}~(d)). The spatial knowledge is paramount in detecting the location of unreachable areas, so-called voids, a prime location where victims might be trapped. The gathered information is used to instruct rescue responders to reach several POIs and the \IC\ can annotate the visualization with new real-time information that he receives from the on-site rescue responders, thus shifting the decision making process from being opportunistic to being strategical. Based on the available information, our system computes an ensemble of possible access paths from the entry point to the POIs, where each path is based on varying risk factors, for example overall distance, closest distance to a hazard, or the structural stability of the ground underneath. Uncertainty in the data and a priori unknown information make it infeasible to employ fully automatic algorithms to detect the globally optimal path. Thus, our system supports the \IC\ in the process of analyzing and comparing all available paths at once to reach a conclusion which minimizes the rescuer's danger and travel time.
+In this paper, we present a visualization system targeted at search \& rescue missions. The system creates an interactive 3D rendering that is tailored to increase the commander's spatial awareness of the internal structures (see Figure~\ref{fig:teaser}~(a-c)) and further supports the analysis and planning of access paths (see Figure~\ref{fig:teaser}~(d)). The information is used to instruct rescue responders to reach several POIs and the \IC\ can annotate the visualization with new real-time information provided by the on-site responders, thus shifting the decision making process from being opportunistic to being strategical. Our system computes an ensemble of possible access paths, each based on varying risk factors, and presents them to the \IC\ in the same environment. This, our system supports the \IC\ in analyzing and comparing all available paths at once to reach a conclusion which minimizes the rescuer's danger and travel time.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%\vspace*{-3pt}
 \section{Related Work} \label{sec:relatedwork}
-\noindent {\bfseries Emergency management.} Much of the visualization-oriented work published in the field of emergency management is concerned with evacuation planning well before any rescue operation has to be performed. Notable work was performed by Reddy~\etal, which enables analyzing possible bottlenecks of escape routes~\cite{EuroVA12:13-17:2012}. While algorithms from these areas could be utilized to our benefit, they usually assume perfect walking conditions and a constant structural layout of the building. Ribarsky~\etal\ presented a system organizing first responders in intact structures~\cite{Ribarsky:2010}. Kim~\etal\ developed a system enhancing the situational awareness of responders using a mobile visual analytics tool~\cite{Kim:2008}. Another related area is the research on visual analysis-supported ensemble steering. While these techniques use ensembles and visualization to reduce the impact of uncertainty in the input parameters, our system helps the operator to find the best trade-off between the various runs. Ribi\v{c}i\'c~\etal\ investigated steering ensembles of flooding simulations using visual analysis~\cite{6280550}. They showed that visual analysis is a useful method for experts to interpret this kind of data. Their idea of generating different measures about a particular flooding scenario inspired our approach to compute path ensembles. 
+\noindent {\bfseries Emergency management.} Much of the visualization-oriented work published in the field of emergency management is concerned with pre-disaster evacuation planning. Notable work was performed by Reddy~\etal, which enables analyzing possible bottlenecks of escape routes~\cite{EuroVA12:13-17:2012}. While algorithms from these areas could be utilized to our benefit, they usually assume perfect walking conditions and a constant structural layout of the building. Ribarsky~\etal\ presented a system organizing first responders in intact structures~\cite{Ribarsky:2010}. Kim~\etal\ developed a system enhancing the situational awareness of responders using a mobile visual analytics tool~\cite{Kim:2008}. Another related area is the research on visual analysis-supported ensemble steering. Ribi\v{c}i\'c~\etal\ investigated steering ensembles of flooding simulations using visual analysis~\cite{6280550}. They showed that visual analysis is useful to interpret this kind of data.
 
-Many existing planning systems deployed nowadays in USAR scenarios are based on 2D representations~\cite{kleiner_et_al_ssrr09,KohlbrecherMeyerStrykKlingaufFlexibleSlamSystem2011,Pellenz2009SMU}. Given the 2D map of the environment, one common approach to path planning is to plan the shortest trajectory and to follow this trajectory stepwise. In harsh environments, however, the safest path, not the shortest, may be desirable. Wirth~\etal\ introduced an exploration strategy and path planner that utilizes occupancy grid maps when planning to reach several targets at the same time~\cite{Wirth2007ETA1}. Consequently, the method selects the safest alternative consisting of target location and the corresponding path. Preliminary extensions towards exploration in 3D with regard to detection of voids were introduced by Dornhege and Kleiner~\cite{dornhege2011frontier}.
+Many existing planning systems deployed nowadays in USAR scenarios are based on 2D representations~\cite{kleiner_et_al_ssrr09,KohlbrecherMeyerStrykKlingaufFlexibleSlamSystem2011,Pellenz2009SMU}. Given the 2D map of the environment, one common approach to path planning is to plan the shortest trajectory and to follow this trajectory stepwise. In harsh environments, however, the safest path, not the shortest, may be desirable. Wirth~\etal\ introduced an exploration strategy and path planner that utilizes occupancy grid maps when planning to reach several targets at the same time~\cite{Wirth2007ETA1}. Extensions towards exploration in 3D with regard to detection of voids were introduced by Dornhege and Kleiner~\cite{dornhege2011frontier}.
 
-%\noindent\textbf{Visual analytics.} There has been work investigating the sense-making process when using visual analytics tools. Gotz \etal\ investigated how to measure insight provenance, a critical measure to judge the quality of reasoning~\cite{Gotz2009}. Roberts presented a state-of-the-art report on how to apply the visual analytics models and techniques using coordinated and multiple views~\cite{roberts2007multipleviews}. Keim \etal\ provide a good overview about the current developments in the field~\cite{keim2010mastering}.
-
-\noindent {\bfseries Point cloud visualization.} As the real-time availability of high resolution point clouds has increased in recent years, there has been much research on rendering techniques for this kind of data. Basic rendering capabilities are provided by the widely used Point Cloud Library, which provides a wide array of functionality~\cite{Rusu11ICRA}. Furthermore, there has been work by Richter~\etal\ using a level-of-detail structure to render massive point clouds at high frame rates~\cite{Richter:2010:ORV:1811158.1811178}. Xu~\etal\ showed that non-photorealistic rendering techniques can be applied to point cloud data~\cite{conf/npar/XuC04}. The contour lines in their rendering inspired our rendering algorithm. More recently, Pintus~\etal\ presented a rendering algorithm that enhances features of unstructured point clouds in real-time without preprocessing~\cite{Pintus:2011:RRM:2384495.2384513}.
+\noindent {\bfseries Point cloud visualization.} Basic rendering capabilities for point clouds are provided by the widely used Point Cloud Library~\cite{Rusu11ICRA}. There has been work by Richter~\etal\ using a level-of-detail structure to render massive point clouds at high frame rates~\cite{Richter:2010:ORV:1811158.1811178}. Xu~\etal\ showed that non-photorealistic rendering techniques can be applied to point cloud data~\cite{conf/npar/XuC04}. The contour lines in their rendering inspired our rendering algorithm. More recently, Pintus~\etal\ presented a rendering algorithm that enhances features of unstructured point clouds in real-time without preprocessing~\cite{Pintus:2011:RRM:2384495.2384513}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Decision-Making Theory} \label{sec:theory}
-To be able to design an effective decision support system for USAR missions, it is crucial to take knowledge about human decision making into account. Human decision makers tend to evaluate options serially in time-constrained situations, such as fire fighting. They attempt to find one viable plan that should work rather than attempting to generate and compare numerous plans in parallel. This theory has been described by Klein and Calderwood as \emph{Recognition Primed Decision-making} (RPD)~\cite{KleinCalderwood}. Initially, human experts look for similarities to previous situations that bring up goals that were relevant, things that were important to monitor, and actions that were possible to pursue. Then they go through a process of mental simulation to consider whether the actions are also applicable to the case at hand. They also assess the ongoing situation, looking for violations and confirmations of expectancies, which may require reframing the situation. Klein and Calderwood suggest that ``displays and interfaces can be centered on decisions rather than around data flows''~\cite{KleinCalderwood}, emphasizing that systems can be built to enhance the decision process. 
+In order to to design a support system for USAR missions, it is crucial to utilize knowledge about decision making. Decision makers in time-constrained situations tend to evaluate options serially. They attempt to find one viable plan rather than generating and comparing numerous plans in parallel. This theory has been described by Klein and Calderwood as \emph{Recognition Primed Decision-making} (RPD)~\cite{KleinCalderwood}. Initially, experts look for similarities to previous situations, such as relevant goals, things that were important to monitor, and possible actions. Then, they simulate whether the actions are also applicable to the current case.
 
-Similarly, the \emph{Contextual Control Model} (COCOM) by Hollnagel and Woods describes how people rely on context when making decisions~\cite{hollnagel2005joint}. This theory recognizes that humans sometimes act with plans of lower quality, relying on the environment to make decisions opportunistically without having a whole plan to reach the end goal. The quality of their control of the situation can be described as scrambled, opportunistic, tactical, or strategic. The scrambled mode refers to decisions made without any idea of what to do. In the opportunistic mode, people rely on cues in the local context to decide on their next action. In tactical mode, they have or get an idea of how to achieve their goal before taking action---a plan. In strategic mode, the plan includes coordination with other simultaneous goals. The goal of our proposed system is to raise the quality of control from being opportunistic (as in the current workflow) to being strategic, thus enabling improved decision-making capabilities.
+Similarly, the \emph{Contextual Control Model} (COCOM) by Hollnagel and Woods describes how people rely on context when making decisions~\cite{hollnagel2005joint}. This theory recognizes that humans sometimes act with plans of lower quality, relying on the environment to make decisions opportunistically, without a concrete plan. The quality of their control can be described as scrambled, opportunistic, tactical, or strategic. The scrambled mode refers to decisions made without any information. In the opportunistic mode, people rely on cues in the local context to decide on their next action. In tactical mode, they have an idea of how to achieve their goal before taking action---a plan. In strategic mode, the plan includes coordination with other simultaneous goals. The goal of our system is to raise the quality of control from being opportunistic to being strategic, thus enabling improved decision-making.
 
-Turning to the granularity of plans, the \emph{Extended Control Model} (ECOM) describes plans in terms of a tactical level (setting goals), monitoring (making plans and overseeing plans), regulating (managing local resources), and tracking (performing and adjusting actions)~\cite{hollnagel2005joint}. This theory can be used to apprise what kind of planning support a system provides.  Moreover, it has been argued by Lundberg~\etal\ that in areas such as emergency response it is important to support resiliency: ``Rather than merely selecting a response from a ready-made table, [the system] must adapt and create a suitable response; either by following ready-made plans for adaptation or by making sense of the situation and create responses during the unfolding event''~\cite{Lundberg2012}. Thus, in addition to supporting specific responses that may be foreseen, the system should also support working outside of specific prepared means.
+Regarding granularity, the \emph{Extended Control Model} (ECOM) describes plans in terms of a tactical level (setting goals), monitoring (making plans and overseeing plans), regulating (managing local resources), and tracking (performing and adjusting actions)~\cite{hollnagel2005joint}. This theory can be used to apprise what kind of planning support a system provides. Moreover, the important of supporting resiliency has been argued by Lundberg~\etal : ``Rather than merely selecting a response from a ready-made table, [the system] must adapt and create a suitable response; either by following ready-made plans for adaptation or by making sense of the situation and create responses during the unfolding event''~\cite{Lundberg2012}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Incident Commander Workflow} \label{sec:workflow}
+%
+%%\begin{figure}
+%%	\centering
+%%	\includegraphics[width=0.9\columnwidth]{figures/workflow.pdf}
+%%	\caption{A schematic timeline overview of the currently employed workflow (left) and our proposed visualization-enhanced system (right), showing all events (red) and actions (blue) split up into five distinct phases (roman numerals). Utilizing the additional actions (yellow) in parallel and thus enabling faster and less dangerous exploration, we decrease the overall time-to-rescue.}
+%%	\label{fig:workflow:workflow}
+%%\end{figure}
+%
+In most USAR protocols, for example in FEMA~\cite{fema08} or Emergency Management Australia~\cite{em35}, one \IC\ is responsible for a single building and instructs multiple rescue responders inside this building. In this section, we will describe our visualization-enhanced workflow supporting the \IC\ in this task.
 
-\begin{figure}
-	\centering
-	\includegraphics[width=0.9\columnwidth]{figures/workflow.pdf}
-	\caption{A schematic timeline overview of the currently employed workflow (left) and our proposed visualization-enhanced system (right), showing all events (red) and actions (blue) split up into five distinct phases (roman numerals). Utilizing the additional actions (yellow) in parallel and thus enabling faster and less dangerous exploration, we decrease the overall time-to-rescue.}
-	\label{fig:workflow:workflow}
-\end{figure}
+%
+%\noindent {\bfseries Current workflow.} After arriving at the disaster scene (Phase \texttt{I}), the first step for the responders is to explore and secure the area outside the collapsed building (Phase \texttt{II}). No rescuer is allowed to enter the building before it is secured, which can take an hour or more to finish (Phase \texttt{III}). Then, based on the gathered information, the \IC\ determines valid entry points into the structure and directs rescuers into the collapsed structure to perform reconnaissance (Phase \texttt{IV}). Using constant radio communication, the rescuer inside the building slowly advances and reports his progress to the \IC, who draws a 2D map (see Figure~\ref{fig:workflow:sota}) based on that information (Phase \texttt{V}). The rescuer enters the unknown building with unquantifiable risks, like gas leaks or dormant fires, inside. Not only is the 2D drawing of an unstructured 3D building insufficient and inaccurate, it also does not provide acceptable spatial awareness. This is clearly an example of opportunistic control, where decisions are made opportunistically based on feedback from the environment. The map is created as the rescuer proceeds, inhibiting higher levels of control in the beginning of the path. Although responders may recognize situations, decisions regarding the path are limited to the extent of the current exploration and to their view of the local environment. Initially, therefore, any RPD is restricted to the local environment. Global planning is limited further by the ability of responders to communicate relevant structural information accurately to the \IC, such as angles of turns, which cause hand-drawn maps to experience drift. This technique of opportunistic exploration has further limitations in that a faster and safer path might exist, but is not known to the rescuer or the \IC\ at that moment.
+%
+After arriving at the disaster scene, the first step for responders is to explore and secure the area outside the collapsed building. No rescuer is allowed to enter the building before it is secured, which can take an hour or more to complete. While the responders secure the building, unmanned vehicles are released into the structure to record and measure the inside, feeding back information to the \IC , who inspects the map and determines viable entry points combining the map information with real-world input. The robots' sensors are able to detect most signs of victims using thermal cameras and heart beat detectors~\cite{Wu12Eulerian}, but as these measurements are uncertain, both false positives and false negatives might occur. The same holds true for hazardous environments like fires, gas leaks, radiation, or structurally unsafe areas. The data retrieval and preprocessing is done in parallel with securing the perimeter, so that all information is available when the next phase begins. Based on suggested or selected POIs, the system computes optimal paths that the \IC\ uses to direct the rescuers through the building. This reduces time-to-rescue as the rescuers do not need to explore the building to the same extent, but can proceed directly to the POIs. Thus, the system applies RPD to the whole situation, extending the number of available cues and planning from local conditions to higher ECOM levels.
 
-\begin{figure}[b]
-    \vspace{-0.2cm}
-	\centering
-	\fbox{\includegraphics[width=0.6\columnwidth]{figures/map-drawing.jpg}}
-	\caption{The currently employed workflow in search \& rescue operations requires the \IC\ to draw a 2D map by hand for orientation. The FEMA standards for annotations are visible in the lower part.}
-	\label{fig:workflow:sota}
-\end{figure}
+When planning the access paths, a variety of factors must be taken into account. The responder must maintain a safe distance from hazardous environments, avoid overhanging structures, and the ground must be both stable and level. Uncertainty in the data, varying requirements, and the invaluable knowledge of the \IC\ make it infeasible for an algorithm to take all these factors into account. Furthermore, as these variables are extracted from uncertain data, they are difficult to quantify and are subject to uncertainties. The \IC\ has to perform trade-offs to choose between alternatives, for example favoring a faster, longer path over a more dangerous, shorter path.
 
-While there is no general definition of a rescue team in an USAR incident, in most protocols, for example in FEMA~\cite{fema08} or Emergency Management Australia~\cite{em35}, one \IC\ is responsible for a single building and instructs multiple rescue responders inside this building. In this section, we will describe the current workflow first (see Figure~\ref{fig:workflow:workflow}, left) and then propose a visualization-enhanced workflow supported by our system (see Figure~\ref{fig:workflow:workflow}, right). Roman numerals in the text refer to the corresponding phases in the figure.
-
-\noindent {\bfseries Current workflow.} After arriving at the disaster scene (Phase \texttt{I}), the first step for the responders is to explore and secure the area outside the collapsed building (Phase \texttt{II}). No rescuer is allowed to enter the building before it is secured, which can take an hour or more to finish (Phase \texttt{III}). Then, based on the gathered information, the \IC\ determines valid entry points into the structure and directs rescuers into the collapsed structure to perform reconnaissance (Phase \texttt{IV}). Using constant radio communication, the rescuer inside the building slowly advances and reports his progress to the \IC, who draws a 2D map (see Figure~\ref{fig:workflow:sota}) based on that information (Phase \texttt{V}). The rescuer enters the unknown building with unquantifiable risks, like gas leaks or dormant fires, inside. Not only is the 2D drawing of an unstructured 3D building insufficient and inaccurate, it also does not provide acceptable spatial awareness. This is clearly an example of opportunistic control, where decisions are made opportunistically based on feedback from the environment. The map is created as the rescuer proceeds, inhibiting higher levels of control in the beginning of the path. Although responders may recognize situations, decisions regarding the path are limited to the extent of the current exploration and to their view of the local environment. Initially, therefore, any RPD is restricted to the local environment. Global planning is limited further by the ability of responders to communicate relevant structural information accurately to the \IC, such as angles of turns, which cause hand-drawn maps to experience drift. This technique of opportunistic exploration has further limitations in that a faster and safer path might exist, but is not known to the rescuer or the \IC\ at that moment.
-
-\noindent {\bfseries Visualization-enhanced workflow.} The initial phases \texttt{I} and \texttt{II} are the same as in the currently employed workflow. However, while the responders secure the building, which is the most time-consuming of the initial tasks, unmanned robots are released into the structure and start recording and measuring the inside of the structure and feeding back information to the \IC\ (see the parallel execution in phase \texttt{III}). The map data from multiple robots is co-registered in real-time and the \IC\ inspects the map and determines viable entry points into the structure combining the map information with real-world input. The robots' sensors are able to detect most signs of victims using thermal cameras and heart beat detectors~\cite{6027084, Wu12Eulerian}, but as these measurements are uncertain, both false positives and false negatives might occur. The same holds true for hazardous environments like fires, gas leaks, structurally unsafe areas, chemical spills, or radiation. The data retrieval and preprocessing can be done in parallel while securing the perimeter, so that all information is available when phase \texttt{IV} begins. Based on suggested or selected POIs, the system computes optimal paths through the generated map, which the \IC\ can use to direct the rescuers into the building. This reduces time-to-rescue (Phase \texttt{V}) as the rescuers do not need to explore the building to the same extent, but can proceed directly to the POIs. The proposed system applies RPD to the whole situation, extends the number of available cues and planning from local conditions (tracking and regulating) to higher ECOM levels.
-
-When planning the access paths, a variety of factors must be taken into account. The responder must maintain a safe distance from hazardous environments, avoid overhanging structures, and the ground must be both stable and level. The uncertainty in the data, the varying requirements, and the invaluable expert knowledge of the \IC\ make it infeasible to derive an algorithm taking all these variables into account. Furthermore, as these variables are extracted from uncertain data, they are difficult to quantify and are subject to uncertainties. The \IC\ has to perform trade-offs to choose between alternatives, for example favoring a longer path that is faster to traverse over a more dangerous, shorter path. These requirements for expert knowledge, as well as the uncertainty, make the path selection a perfect example demonstrating how the human-in-the-loop paradigm benefits the decision-making.
-
-While the \IC\ is instructing the rescuer to follow one chosen path, the rescuer feeds back new information, for example possible victims or new hazards. The \IC\ incorporates this information into the application to update the mapping information and paths. This is of high importance as features might not only have been missed by the robots, but detected features might change during the rescue operation. Fires can start or extinguish, subsequent structural collapses can make areas inaccessible, or debris is removed after the initial reconnaissance making previously inaccessible areas available. %Although we are designing a system lifting the decision-making to a strategic control, this bears an opportunistic element of planning in the COCOM-sense. However, the system has to support replanning in a strategic control mode to be able to adapt to changing environments.
+While the \IC\ is instructing the rescuer to follow one path, the rescuer feeds back new information, for example victims or new hazards. The \IC\ incorporates the information into the system to update the mapping information and paths. This is of high importance as features might not only have been missed by the robots, but detected features might change during the rescue operation. Fires can start or extinguish, subsequent structural collapses can make areas inaccessible, or debris is removed after the initial reconnaissance making previously inaccessible areas available. %Although we are designing a system lifting the decision-making to a strategic control, this bears an opportunistic element of planning in the COCOM-sense. However, the system has to support replanning in a strategic control mode to be able to adapt to changing environments.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{System Overview} \label{sec:overview}
+%Combining expertise in visualization, cognitive systems engineering, rescue robotics, and thorough discussions with domain experts, we determined a set of requirements that must be fulfilled to make our system useful for the \IC. We employed theories from sense-making and decision-making (see Section~\ref{sec:theory}) to guide the design of our system to fully support the \IC. The visualization components are designed to comply with these theories and have been tested in a user study with external domain experts as described in Section~\ref{sec:evaluation}.
+%
+%The components should fulfill the following requirements, which we have derived from our discussions with the collaborating experts:
+%
+%\begin{description}
+%\item[R1] The system must increase the \IC 's spatial awareness by allowing for interactive exploration of the collapsed structure.
+%\item[R2] The system must enable the \IC\ to interactively annotate the acquired data to react to changing circumstances in the structure.
+%\item[R3] The \IC\ must be able to inspect multiple access paths and be able to compare them and make trade-offs.
+%\item[R4] The system must provide the tools to select a globally optimal path and allow for its execution.
+%\end{description}
 
-Combining expertise in visualization, cognitive systems engineering, rescue robotics, and thorough discussions with domain experts, we determined a set of requirements that must be fulfilled to make our system useful for the \IC. We employed theories from sense-making and decision-making (see Section~\ref{sec:theory}) to guide the design of our system to fully support the \IC. The visualization components are designed to comply with these theories and have been tested in a user study with external domain experts as described in Section~\ref{sec:evaluation}.
+%The proposed system employs multiple linked views to address these requirements (see Figure~\ref{sec:overview:system}). In order to fulfill requirement {\bfseries R1}, our system visualizes the acquired point cloud in an interactive manner that preserves occlusion and helps the \IC\ to form a consistent mental model of the structure. Within this visualization, the \IC\ can seamlessly annotate newly discovered entrances, hazards, POIs, and forbidden areas, thus fulfilling requirement {\bfseries R2}. To address requirements {\bfseries R3} and {\bfseries R4}, we integrate a visual representation of the different paths into the 3D visualization, and provide separate in-depth analysis tools.
 
-The components should fulfill the following requirements, which we have derived from our discussions with the collaborating experts:
-
-\begin{description}
-\item[R1] The system must increase the \IC 's spatial awareness by allowing for interactive exploration of the collapsed structure.
-\item[R2] The system must enable the \IC\ to interactively annotate the acquired data to react to changing circumstances in the structure.
-\item[R3] The \IC\ must be able to inspect multiple access paths and be able to compare them and make trade-offs.
-\item[R4] The system must provide the tools to select a globally optimal path and allow for its execution.
-\end{description}
-
-The proposed system employs multiple linked views to address these requirements (see Figure~\ref{sec:overview:system}). In order to fulfill requirement {\bfseries R1}, our system visualizes the acquired point cloud in an interactive manner that preserves occlusion and helps the \IC\ to form a consistent mental model of the structure. Within this visualization, the \IC\ can seamlessly annotate newly discovered entrances, hazards, POIs, and forbidden areas, thus fulfilling requirement {\bfseries R2}. To address requirements {\bfseries R3} and {\bfseries R4}, we integrate a visual representation of the different paths into the 3D visualization, and provide separate in-depth analysis tools.
-
-The following subsections explain the individual components of our system. Before the acquired data can be used by our system, a preprocessing must be performed, which extracts derived data from the point cloud (Section~\ref{sec:overview:preprocessing}). Following the preprocessing, interactive data annotation is possible (Section~\ref{sec:overview:annotation}). Since the selection of an optimal access path based on a computed path ensemble is a central component of the system, we describe this computation process together with the employed comparison metrics in Section~\ref{sec:overview:pathcomputation}. The analysis of the path ensemble is described in the same section, while Section~\ref{sec:overview:3dvisualization} provides details on the considerations that went into designing the 3D visualization components of our system.
+Our proposed system employs multiple linked views to provide the \IC\ with all necessary information (see Figure~\ref{sec:overview:system}). The following sections explain the individual components of our system. Before the acquired data can be used by our system, a preprocessing must be performed, extracting derived data from the point cloud (Section~\ref{sec:overview:preprocessing}). Then, interactive data annotation is possible (Section~\ref{sec:overview:annotation}). The selection of an optimal access path based on a computed path ensemble is described, together with the employed comparison metrics, in Section~\ref{sec:overview:pathcomputation}. The analysis of the path ensemble is described in the Section~\ref{sec:overview:pathanalysis}, while Section~\ref{sec:overview:3dvisualization} provides details on the considerations that went into designing the 3D visualization component of our system.
 
 \begin{figure}
     \centering
@@ -206,102 +197,42 @@ The following subsections explain the individual components of our system. Befor
 
 
 \subsection{Data Preprocessing} \label{sec:overview:preprocessing}
-The data preprocessing employed by our system consists of two steps. First, the data is scan-converted to facilitate 3D visualization and path computation. Second, attributes coding spatial information are derived, which are later used during the path analysis.
+The data preprocessing consists of two steps. First, the data is scan-converted to facilitate 3D visualization and path computation. Second, attributes coding spatial information are derived that are later used during the path analysis.
 
-\begin{figure*}
+\begin{figure}
 	\centering
-	\subfigure[Hazard distance field]{
-	    \includegraphics[width=0.475\columnwidth]{figures/fig-overview-hazardfield.png}
-	    \label{fig:overview:precomputation:hazardfield}
-	}
-	\hfill
-	\subfigure[Support field]{
-	    \includegraphics[width=0.475\columnwidth]{figures/fig-overview-supportfield.png}
-	    \label{fig:overview:precomputation:supportfield}
-	}
-	\hfill
-	\subfigure[Occupancy field]{
-	    \includegraphics[width=0.475\columnwidth]{figures/fig-overview-occupancyfield.png}
-	    \label{fig:overview:precomputation:occupancyfield}
-	}
-	\hfill
-	\subfigure[Height component of Size field]{
-	    \includegraphics[width=0.475\columnwidth]{figures/fig-overview-sizefield.png}
-	    \label{fig:overview:precomputation:sizefield}
-	}
+	\includegraphics[width=\columnwidth]{figures/fig-overview-fields-small.png}
 	\caption{Attributes derived in the data preprocessing stage with values mapped to the colors of individual voxels. Colormaps are shown beneath the respective images. (a) distance to the closest hazard. (b) level of support. (c) occupancy or data density. (d) availability of space above each voxel.}
     \label{fig:overview:precomputation}
-\end{figure*}
+\end{figure}
 
-\noindent {\bfseries Scan conversion.} The data retrieved from the unmanned robots are an unstructured 3D point cloud of an affected building's interior. The resolution of the scan is highly dependent on the allotted scanning time as well as the employed scanner. One issue with directly rendering such point clouds is missing occlusion information and the non-uniform distribution of measured points. To avoid this problem, we perform a binning of the point cloud to obtain a three-dimensional voxel data structure on a regular grid. The voxel size is dependent on the scan resolution of the robot, as it is a trade-off between resolving smaller details and increasingly noisy data. In our cases, voxel sizes of about 5\,cm were considered to be sufficient with regard to this trade-off. While this is currently a user-specified parameter, we are positive that in the future, automated analysis techniques together with the knowledge of the scanning protocol will lead to an automatic derivation of this quantity. After the binning has been performed, the resulting grid-based data structure contains one voxel for all bins where the occupancy exceeds a certain threshold. In our approach, we discard every voxel that only depends on a single measurement point, since this is likely due to measurement noise. From this point on we call a measurement in the original point cloud a \emph{point} and refer to a position in the grid-based, binned point cloud as a \emph{voxel}.
+\noindent {\bfseries Scan conversion.} The data retrieved from the unmanned robots is an unstructured 3D point cloud. One issue with directly rendering such point clouds is missing occlusion information and the non-uniform distribution of measured points. To avoid this problem, we perform a binning of the point cloud to obtain a three-dimensional voxel data structure on a regular grid. From this point on we call a measurement in the original point cloud a \emph{point} and refer to a position in the grid-based, binned point cloud as a \emph{voxel}. The voxel size is dependent on the scan resolution of the robot, as it is a trade-off between resolving smaller details and decreasing SNR. In our cases, voxel sizes of about 5\,cm were sufficient. After the binning has been performed, the resulting regular structure contains one voxel for all bins with at least one one point.
 
-\noindent {\bfseries Attribute derivation.} In the second part of the preprocessing, derived attributes are computed for the voxel data, which are subsequently used to determine a set of viable rescue paths and to support the analysis of these paths. We compute a \emph{hazard distance field} (Figure~\ref{fig:overview:precomputation:hazardfield}) that denotes the distance to the closest hazard points for each voxel, weighted by severity. Let $\mathbf{i}$ be the current voxel, $H$ the set of hazard points, and $H^{\mathbf{i}}_s$ the normalized severity for $\mathbf{i}$. The hazard field is given by: $h(\mathbf{i}) = \min_\mathbf{j}(\mathrm{L}_2(\mathbf{i}, H^\mathbf{j}) \cdot H^\mathbf{j}_s)$. The \emph{support field} (Figure~\ref{fig:overview:precomputation:supportfield}) shows the available supporting area for each voxel. This value determines whether there is enough floor available for a responder to walk without hindrance. The voxel neighborhood in the plane perpendicular to the gravity axis is considered as that plane coincides with horizontal surfaces. The \emph{occupancy field} (Figure~\ref{fig:overview:precomputation:occupancyfield}) denotes the number of  points each voxel is based on. A higher occupancy means that the voxel contains more points in the original point cloud data and thus provides a higher certainty. The occupancy can be increased by longer scan rates and better scanning technology. The \emph{size field} (Figure~\ref{fig:overview:precomputation:sizefield}) shows for each voxel if a rescuer can fit into the space above without squeezing. We calculate two size values, one with the rescuer standing up, and a second while crouching. However, the system is designed in such a way that different geometries, for example rescue robots, can be easily integrated during runtime as long as the defined geometry supports fast point-intersection tests. 
-
-To compute viable paths, we also need orientation information to be able to exclude paths that would be too steep for a rescuer. We utilize data normals in order to indicate the orientation of structures of interest. We investigated two sensible measures for determining the normal direction at each voxel. In the first method we compute the least-squares fitted plane based on all the points in the original point cloud which are covered by a voxel. The normal of the resulting plane is used as the normal for the voxel. The second method performs a least-squares fit of the neighborhood of the voxel to determine the principal direction of the plane. In our tests we found that the first method results in greater stability provided higher occupancy, as they were less susceptible to measurement noise.
+\noindent {\bfseries Attribute derivation.} In the second part of the preprocessing, derived attributes are computed, which are subsequently used to determine a set of viable rescue paths and to support the analysis of these paths. We compute a \emph{hazard distance field} (Figure~\ref{fig:overview:precomputation}) that denotes the distance to the closest hazard points for each voxel, weighted by severity. The \emph{support field} (Figure~\ref{fig:overview:precomputation}) shows the available supporting area for each voxel. This value determines whether there is enough floor available for a responder to walk without hindrance. The \emph{occupancy field} (Figure~\ref{fig:overview:precomputation}) denotes the number of  points each voxel is based on. A higher occupancy means that the voxel contains more points in the original point cloud data and thus provides a higher certainty. The \emph{size field} shows for each voxel if a rescuer can fit into the space above without squeezing. We calculate two size values, one with the rescuer standing up, and a second while crouching. We also require orientation information to be able to exclude paths that would be too steep for a rescuer. We utilize data normals in order to indicate the orientation of structures of interest. For this, we compute the least-squares fitted plane based on all the points in the original point cloud which are covered by a voxel. The normal of the resulting plane is used as the normal for the voxel.
 
 
 \subsection{Data Annotation} \label{sec:overview:annotation}
-With respect to requirement {\bfseries R2}, it is essential for the \IC\ to be able to classify and annotate the data interactively. In our system, each voxel can belong to one of five classes. \emph{Unclassified} is the default type for all voxels and does not convey any special semantics. \emph{Start} voxels are entry points that are accessible and usable. This means that each path can start from any of these points. \emph{POI} voxels are denoted, either by the robots or by the \IC, to be destination points for a path. These could indicate that there is a potential victim or another mission-critical element at this location. \emph{Hazard} voxels have been declared as dangerous due to, for example, an ongoing fire or gas leak. Each hazard area has a normalized severity that denotes how dangerous it is. \emph{Forbidden} voxels can only be declared by the \IC\ and are areas completely out of reach for traversal. These points are used when, for example, a corridor collapses and is not accessible anymore.
-
-The \IC\ can modify the classification for each voxel by directly interacting with the point cloud visualization using the mouse. He can either modify a single voxel or perform a radius-based selection of all nearby voxels close to the selection. This modification can be either removing all voxels from a classification, adding voxels to a classification, or removing selected voxels.
+It is essential for the \IC\ to be able to classify and annotate the data interactively. In our system, each voxel can belong to one of five classes. \emph{Unclassified} is the default type for all voxels and does not convey any special semantics. \emph{Start} voxels are usable entry points. This means that each path can start from any of these points. \emph{POI} voxels are destination points for a path. These indicates a potential victim or another mission-critical element. \emph{Hazard} voxels have been declared as dangerous due to, for example, an ongoing fire or gas leak. \emph{Forbidden} voxels can only be declared by the \IC\ and are areas completely out of reach for traversal. These points are used when, for example, a corridor collapses and is not accessible anymore. The \IC\ modifies the classification for each voxel by directly interacting with the point cloud visualization; either modifying a single voxel or perform a radius-based selection of all nearby voxels close to the selection.
 
 
 \subsection{Path Computation} \label{sec:overview:pathcomputation}
-%\begin{table*}[bt]
-%\centering
-%\begin{tabular}{|c||c|c|c|p{5cm}|}
-%\hline
-%Attribute & Validity & Application & Type & Explanation \\ \hline
-%Path Length & Path & Selection \& Path Computation & number & The overall length of the path in standard units\\ \hline
-%Minimal Hazard Distance & global & Selection & number & The closest distance in standard units the path has to all hazardous areas \\ \hline
-%Average Hazard Distance & global & Selection & number & The average distance in standard units the path has to all hazardous areas \\ \hline
-%Maximum Hazard Distance & global & Selection & number & The maximal distance in standard units the path has to all hazardous areas \\ \hline
-%Standard Deviation of Hazard Distance & global & Selection & number & The standard deviation of the distance to all hazard areas \\ \hline
-%Hazard Distance & local & Selection \& Path Computation & number & The distance to the closest hazard for a particular point on the path\\ \hline 
-%Minimal Support & global & Selection & number & Expl \\ \hline
-%Average Support & global & Selection & number & Expl \\ \hline
-%Maximal Support & global & Selection & number & Expl \\ \hline
-%Standard Deviation of Support & global & Selection & number & Expl \\ \hline
-%Support & local & Selection \& Path Computation & number & Expl \\ \hline
-%Minimal Path Inclination & global & Selection & number & Expl \\ \hline
-%Average Path Inclination & global & Selection & number & Expl \\ \hline
-%Maximal Path Inclination & global & Selection & number & Expl \\ \hline
-%Standard Deviation of Path Inclination & global & Selection & number & Expl \\ \hline
-%Inclination & local & Selection \& Path Computation & number & Expl \\ \hline
-%Size Restriction & local & Selection \& Path Computation & boolean & Expl \\ \hline
-%\end{tabular}
-%\caption{A list of all attributes which are used in this work alongside explanations.}
-%\label{tab:attributes}
-%\end{table*}
+We employ the widely used A* algorithm for the path computations~\cite{4082128}. It is a best-first search algorithm that uses the L$_2$ distance as a heuristic to estimate the distance to the target. The algorithm works as follows: for the current point $p$, the estimated remaining distance is calculated for each unvisited neighboring point $q$. This value is the sum of the cost to reach $p$, the cost to move from $p$ to $q$, and the estimated cost to reach the target from $q$. Then, the point with the lowest cost is chosen as the next valid point. For a comprehensive description of the algorithm we refer the reader to the book by Russel and Norvig~\cite{AStar}.
 
-For the path computations, we employ the widely used A* algorithm~\cite{4082128}. It is a best-first search algorithm that uses the L$_2$ distance as a heuristic to estimate the distance to the target. The algorithm works as follows: For the current point $x$, the estimated remaining distance is calculated for all unvisited neighboring points $y_i$. This value is the sum of the cost to reach $x$, the cost to move from $x$ to $y_i$, and the estimated cost to reach the target from $y_i$. These points are inserted into a list and the point with the lowest cost is chosen as the next valid point. the current point is then removed from the list and marked as visited. For a comprehensive description of the algorithm we refer the reader to the book by Russel and Norvig~\cite{AStar}.
-
-When computing a path with A*, a metric is used which determines the cost of moving from one point to its neighbor. Thus, it is possible to compute several optimal paths by changing this metric. While it is technically possible to change the metric during the computation run, we did not include this into our system as the resulting complexity in interaction would be prohibitive for usability. The metric that is used in our system is composed of several, weighted sub-metrics that are summed up to yield the following metric:
+When computing a path with A*, a metric is used that determines the cost of moving from one point to its neighbor. Thus, it is possible to compute several optimal paths by changing this metric. The metric that is used in our system is composed of several weighted sub-metrics that are summed to yield the following metric:
 
 \begin{equation}
 \begin{array}{r@{}l}
-m = & \textrm{distance}(\mathbf{p},\mathbf{q}) + w_h \cdot \textrm{hazard}(\mathbf{q}) + w_s \cdot \textrm{size}(\mathbf{q}) + \vspace*{0.1cm} \\
+m = & \textrm{L}_2(\mathbf{p},\mathbf{q}) + w_h \cdot \textrm{hazard}(\mathbf{q}) + w_s \cdot \textrm{size}(\mathbf{q}) + \vspace*{0.1cm} \\
   & w_n \cdot \textrm{normal}(\mathbf{q},\varphi) + w_{sup} \cdot \textrm{support}(\mathbf{q},n)
 \end{array}
 \end{equation}
 
-%\begin{eqnarray}
-%m & = & \textrm{distance}(\mathbf{p},\mathbf{q}) + w_h \cdot \textrm{hazard}(\mathbf{q}) + w_s \cdot \textrm{size}(\mathbf{q}) + \\
-%  & & w_n \cdot \textrm{normal}(\mathbf{q},\varphi) + w_{sup} \cdot \textrm{support}(\mathbf{q},n)
-%\end{eqnarray}
-
-\noindent where $w_h$, $w_s$, $w_n$, and $w_{sup}$ are the weights that are varied between different runs of the path computation. $\mathbf{p}$ is the current voxel and $\mathbf{q}$ is the next voxel under consideration.
-
-The function $\textrm{distance}(\mathbf{p},\mathbf{q})$ calculates the L$_2$ distance between points $\mathbf{p}$ and $\mathbf{q}$ with the result in standard units. Since different scanners produce point clouds in different coordinate systems, it is necessary to convert all input into a standard set of normalized units. $\textrm{hazard}(\mathbf{q})$ returns the hazard severity that is stored in the hazard field. $\textrm{size}(\mathbf{q})$ is a binary function that determines if there is enough space above the voxel $\mathbf{q}$ by constructing the required geometry (with respect to the gravity vector) and testing if there is an intersection with the geometry and another voxel. The $\textrm{normal}(\mathbf{q},\varphi)$ function computes the surface normal for $\mathbf{q}$ and returns a normalized, linear response between the maximum allowed deviation $\varphi$ and the gravity vector. The $\mathrm{support}(\mathbf{q},n)$ value is dependent on the number of supporting voxels in the area around the point $\mathbf{q}$ and is retrieved from the support field. This area depends on the voxel size and should cover an area of about 50cm to allow safe passage. The parameter $n$ is a threshold determining how many surrounding voxels are needed to consider $\mathbf{q}$ being supported.
-
-For different parameter combinations, the optimal path from the entry points to the POIs is computed. Some combinations might result in invalid paths, for example if $w_h$ is set to $\infty$ and the only possible path passes through a hazard field. We immediately exclude those paths from further inspection. If there are multiple POIs the \IC\ can choose to compute paths that visit each of the POIs in turn. This results in the traveling-salesman problem, which can be solved heuristically~\cite{4569756}.
-
-To facilitate the subsequent analysis, global information is calculated for each path. Each path segment provides information about the distance to the closest hazard, while the path stores the minimum, maximum, and average distance together with the standard deviation to allow for in-depth analysis by the \IC. Furthermore, the total length of the path is calculated. 
-
+\noindent where $w_h$, $w_s$, $w_n$, and $w_{sup}$ are the weights that are varied between different runs of the path computation. $\textrm{hazard}(\mathbf{q})$ returns the hazard severity that is stored in the hazard field. $\textrm{size}(\mathbf{q})$ is a binary function that determines if there is enough space above the voxel $\mathbf{q}$. The $\textrm{normal}(\mathbf{q},\varphi)$ function computes the surface normal for $\mathbf{q}$ and returns a normalized, linear response between the maximum allowed deviation $\varphi$ and the gravity vector. The $\mathrm{support}(\mathbf{q},n)$ value is dependent on the number of supporting voxels in the area around the point $\mathbf{q}$ and is retrieved from the support field. This area depends on the voxel size and should cover an area of about 50\,cm to allow safe passage. The parameter $n$ is a threshold determining how many surrounding voxels are needed to consider $\mathbf{q}$ being supported. The optimal path from the entry points to the POIs is computed for different parameter combinations.
 
 \subsection{Visual Path Analysis} \label{sec:overview:pathanalysis}
 
-In order to enable informed trade-offs between all computed paths and final selection of one suitable path, it is essential to provide detailed information about the various paths in an easily interpretable way for the \IC . The \IC\ can use linked views to filter the large number of computed paths in order to make an informed decision about an optimal trade-off. As the exact details of these trade-offs depend on the specific situation and the experience of the \IC, we provide adaptive tools to filter and analyze the path attributes according to the information the \IC\ requests, like \emph{Path Length} versus \emph{Minimal Hazard Distance} or \emph{Maximum Path Inclination} versus \emph{Minimal Support}. In this respect, the employed views have been selected such that they support single and multiple path analysis, as well as single and multiple attribute analysis. In addition it is desirable in some cases to see how certain attributes vary over the extent of a path. By exploiting these views in an interactive manner, the \IC\ can make full use of his knowledge in a strategic decision-making scenario. In the following, we will describe the intended role in the path analysis process for each view, as well as the design considerations we have made in order to ensure that each view fulfills this role in an optimal manner. As the path analysis starts with a larger set of paths which is reduced until a final path is selected, views facilitating comparison of multiple global path attributes for several paths are usually taken into account in the initial analysis phase. Later on the expert usually takes into account how attributes vary locally along the paths for an interesting subset of paths.
+In order to enable informed trade-offs, it is essential to provide the \IC\ with detailed information about the various paths. As the details of these trade-offs depend on the specific situation and the \IC, we provide adaptive tools to filter and analyze the path attributes according to the information the \IC\ requests, like \emph{Path Length} versus \emph{Minimal Hazard Distance} or \emph{Maximum Path Inclination} versus \emph{Minimal Support}. In the following, we will describe the intended role for each view, as well as the design considerations to ensure that each view fulfills this role in an optimal manner.
+%As the path analysis starts with a larger set of paths that is reduced until a final path is selected, views facilitating comparison of multiple global path attributes for several paths are used in the initial analysis phase. Later, the expert usually takes into account how attributes vary locally along the paths for an interesting subset of paths.
 
 \begin{figure*}
 	\centering
@@ -323,7 +254,7 @@ In order to enable informed trade-offs between all computed paths and final sele
 \end{figure*}
 
 \subsubsection{Profile Plot} \label{sec:overview:analysis:profile}
-In order to enable a detailed analysis of attribute changes along a particular path, we include a \emph{Profile Plot} (PP). This is a variation of a line plot showing the change of a single attribute along the path, enabling the \IC\ to spot outliers among the paths. This view makes it easy to compare the paths with regard to the chosen variable since minima and maxima over all paths are easy to detect. Furthermore, it allows the \IC\ to spot irregularities along the path due to measurement errors, which would present themselves as single spikes and possible shifts (see the violet line in Figure~\ref{fig:overview:analysis:profile}). Having the possibility to detect these spikes, it is possible to fix the measurement errors and come to a more accurate path description. Figure~\ref{fig:overview:analysis:profile} shows the attribute \emph{Hazard Distance} for a set of paths.
+In order to enable a detailed analysis of attribute changes along a particular path, we include a \emph{Profile Plot} (PP). This is a variation of a line plot showing the change of a single attribute along the path, enabling the \IC\ to spot outliers among the paths. This view makes it easy to compare the paths with regard to the chosen variable since minima and maxima over all paths are easy to detect. Figure~\ref{fig:overview:analysis:profile} shows the attribute \emph{Hazard Distance} for a set of paths.
 
 While a PP is a simple line plot, several design considerations have been made to ensure effective use in the addressed scenario. First, a PP is meant as a link between the 3D path rendering and the more abstract visualizations enabling attribute comparison. Therefore, the paths are shown with their length on the x-axis and their color being the same as used in the 3D rendering. Thus, each line in the PP can be easily identified as a path and directly linked to the 3D view. As typically multiple paths are shown in the PP, the end point of each path is emphasized with a dot that enables a more direct comparison of path lengths, even when several paths overlap. Finally, the scale of the y-axis of the PP has been chosen such that a better attribute value discrimination becomes possible in regions of high importance. This is achieved by splitting the y-axis into three distinct parts, a sub-linear, a linear, and a super-linear part, which results in a focus-in-context representation. The splitting occurs around values of importance and enables the \IC\ to deemphasize less important value ranges, while providing a higher dynamic range on the y-axis to important values. We use the following mapping function
 
@@ -340,26 +271,26 @@ to create a $C^0$-continuous mapping of a value $x \in [0,1]$ with a lower bound
 
 An example of this remapping can be found in Figures~\ref{fig:remapping:original}~and~\ref{fig:remapping:modified}, which show the \emph{Hazard Distance} on the y-axis. For this attribute there is a non-linear importance of the value range. This means for the unmodified plot (\ref{fig:remapping:original}), that the important values are in the lower $\frac{1}{4}$ of the plot with the majority of the space wasted to less important values. Figure~\ref{fig:remapping:modified} shows the same values with the remapping function applied to the value range, providing higher detail for the important value differences. In addition the \IC\ can toggle a transparent layer in the PP to further highlight the important value range. The transparency of the layer is proportional to the amount of mapping that was performed: $\alpha(x) \propto 1 - \left| x - f(x) \right|$. To suppress an additional gradient that would draw unwanted attention at values 0 and 1, we clamp the $\alpha$ value to the range $[0.2,0.8]$.
 
-\begin{figure}[b]
-\vspace{-0.2cm}
-\centering
-\subfigure[The effect of the exaggeration factor $f$] {
-    \includegraphics[height=0.265\columnwidth]{figures/remapping-function.png}
-    \label{fig:remapping:factor}
-}
-\hfill
-\subfigure[The unmodified Profile Plot] {
-    \includegraphics[height=0.265\columnwidth]{figures/pp-original.png}
-    \label{fig:remapping:original}
-}
-\hfill
-\subfigure[Modified Profile Plot] {
-    \includegraphics[height=0.265\columnwidth]{figures/pp-modified.png}
-    \label{fig:remapping:modified}
-}
-\caption{The mapping function used in \emph{Profile Plots} emphasizes important ranges as a focus-in-context method. (a) the impact of multiple exaggeration factors $f$ for constant values of $l=0.4$ and $r=0.6$. (b) the original profile plot, while (c) a modified plot with values $l=0.025$, $u=0.275$, $f=0.1$.}
-\label{fig:remapping}
-\end{figure}
+%\begin{figure}[b]
+%\vspace{-0.2cm}
+%\centering
+%\subfigure[The effect of the exaggeration factor $f$] {
+%    \includegraphics[height=0.265\columnwidth]{figures/remapping-function.png}
+%    \label{fig:remapping:factor}
+%}
+%\hfill
+%\subfigure[The unmodified Profile Plot] {
+%    \includegraphics[height=0.265\columnwidth]{figures/pp-original.png}
+%    \label{fig:remapping:original}
+%}
+%\hfill
+%\subfigure[Modified Profile Plot] {
+%    \includegraphics[height=0.265\columnwidth]{figures/pp-modified.png}
+%    \label{fig:remapping:modified}
+%}
+%\caption{The mapping function used in \emph{Profile Plots} emphasizes important ranges as a focus-in-context method. (a) the impact of multiple exaggeration factors $f$ for constant values of $l=0.4$ and $r=0.6$. (b) the original profile plot, while (c) a modified plot with values $l=0.025$, $u=0.275$, $f=0.1$.}
+%\label{fig:remapping}
+%\end{figure}
 
 \subsubsection{Parallel Coordinates Plot} \label{sec:overview:analysis:pcp}
 Figure~\ref{fig:overview:analysis:pcp} shows the \emph{Parallel Coordinates Plot} (PCP) of our system where each computed path is represented by a colored line. PCPs are a powerful visualization technique for the inspection of several multi-parameter data sets. They are very well suited to detect regularities and patterns in the data, deviations from these patterns, and also to enhance interactive exploration of data sources~\cite{Tory05aparallel}.
@@ -429,20 +360,20 @@ Since autonomous robots are not yet used in emergency situations as the required
 \noindent {\bfseries Rescue arena.} Figure~\ref{fig:overview:case:arena} shows an ensemble of paths through the Bremen rescue arena~\cite{varsadan08}, which is used as an artificial collapsed structure to challenge autonomous robots. As this testing arena was build specifically for search \& rescue scenarios, it proved to be an invaluable test case to apply path finding and selection. The original point cloud consists of $28$ million points, reduced to $5.3$ million points with 4\,cm resolution. This computation took about 2 minutes to complete on the same machine as above.
 
 \subsection{Tohoku Application Case} \label{sec:results:applicationcase}
-\begin{figure}[b]
-    \vspace{-0.5cm}
-    \centering
-    \subfigure[\emph{Standard Deviation of Support} in relation to the \emph{Path Length}] {
-        \includegraphics[width=0.3\columnwidth]{figures/pathlength-stddevsupport.png}
-        \label{fig:overview:analysis:lengthstddev}
-    }
-    \hspace{0.5cm}
-    \subfigure[\emph{Average Hazard Distance} in relation to the \emph{Path Length}] {
-        \includegraphics[width=0.3\columnwidth]{figures/pathlength-averagedistance.png}
-        \label{fig:overview:analysis:lengthavg}
-    }
-    \caption{Two zoom-ins of the Scatterplot Matrix (Figure~\ref{fig:overview:analysis:scatter}).  (a) \emph{Standard Deviation of Support} and (n) \emph{Average Hazard Distance} in relation to the \emph{Path Length}.}
-\end{figure}
+%\begin{figure}[b]
+%    \vspace{-0.5cm}
+%    \centering
+%    \subfigure[\emph{Standard Deviation of Support} in relation to the \emph{Path Length}] {
+%        \includegraphics[width=0.3\columnwidth]{figures/pathlength-stddevsupport.png}
+%        \label{fig:overview:analysis:lengthstddev}
+%    }
+%    \hspace{0.5cm}
+%    \subfigure[\emph{Average Hazard Distance} in relation to the \emph{Path Length}] {
+%        \includegraphics[width=0.3\columnwidth]{figures/pathlength-averagedistance.png}
+%        \label{fig:overview:analysis:lengthavg}
+%    }
+%    \caption{Two zoom-ins of the Scatterplot Matrix (Figure~\ref{fig:overview:analysis:scatter}).  (a) \emph{Standard Deviation of Support} and (n) \emph{Average Hazard Distance} in relation to the \emph{Path Length}.}
+%\end{figure}
 
 
 The major use case to which we have applied our system is based on three scans from a collapsed building at Tohoku university in the aftermath of the 2011 earthquake in Fukushima. The resulting dataset has been acquired with latest state-of-the-art equipment and consists of $26$ million sampling points~\cite{journals/jfr/NagataniKOOYTNYKFK13}, which we resampled to a voxel grid of $4$ million voxels with a voxel size of 3\,cm. As there had been partial collapses in the office building, it proved to be a valid and useful simulated real-world application case to test our proposed system with respect to uneven ground and obstacles. Figure~\ref{fig:teaser:1} shows a closeup rendering of the data set, which shows that the level of detail is sufficient to support spatial awareness. The rendering clearly shows a room with a chair and a table visible on the right, shelves on the left and a window in the back wall.
