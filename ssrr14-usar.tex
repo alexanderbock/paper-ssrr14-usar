@@ -10,7 +10,8 @@
 \usepackage{subfigure}
 \usepackage{flushend}
 \usepackage[normalem]{ulem}
-\newcommand\MYhyperrefoptions{bookmarks=true,bookmarksnumbered=true,
+\usepackage{gensymb}
+\newcommand\MYhyperrefoptions{bookmarks=false,bookmarksnumbered=true,
 pdfpagemode={UseOutlines},plainpages=false,pdfpagelabels=true,
 colorlinks=true,linkcolor={black},citecolor={black},pagecolor={black},
 urlcolor={black},
@@ -122,7 +123,7 @@ We present a visualization system for incident commanders in urban search~\&~res
 	}
 	\hfill
 	\subfigure[Attributes derived in the data preprocessing stage. From left: distance to the closest hazard, occupancy, and level of support]{
-	    \fbox{\includegraphics[height=0.245\linewidth, width=0.4\linewidth]{figures/fig-overview-fields-small.jpg}}
+	    \fbox{\includegraphics[height=0.245\linewidth, width=0.4\linewidth]{figures/fig-overview-fields-small.png}}
     \label{fig:overview:precomputation}
     }
 %	\caption{(a) Attributes derived in the data preprocessing stage with values mapped to the colors of individual voxels, from left to right: distance to the closest hazard, occupancy or data density, and level of support.}	
@@ -206,17 +207,100 @@ Our proposed system employs multiple linked views to provide the \IC\ with all i
 
 \begin{figure}
     \centering
-    \fbox{\includegraphics[width=0.85\columnwidth]{figures/fig-overview-system2.jpg}}
+    \fbox{\includegraphics[width=\columnwidth]{figures/fig-overview-system2.png}}
     \caption{A screenshot showing our system for a typical scenario. Each view can be maximized to fill the entire screen for in-depth inspection.}
     \label{sec:overview:system}
 \end{figure}
 
-
 \subsection{Data Preprocessing} \label{sec:overview:preprocessing}
-The data retrieved from the unmanned robots is an unstructured 3D point cloud. One issue with directly rendering such point clouds is missing occlusion information and the non-uniform distribution of points. To avoid this problem, we perform a binning of the point cloud to obtain a three-dimensional voxel structure on a regular grid. From this point, we call a measurement in the original point cloud a \emph{point} and refer to a position in the grid-based, binned point cloud as a \emph{voxel}. The bin size is dependent on the scan resolution of the robot, as it is a trade-off between resolving smaller details and decreasing SNR. In our cases, sizes of about 5\,cm were sufficient. After the binning, the resulting regular structure contains one voxel for all bins with at least one point.
+The data retrieved from the unmanned robots is an unstructured 3D point cloud. One issue with directly rendering such point clouds is missing occlusion information and the non-uniform distribution of points. To avoid this problem, we perform a binning of the point cloud to obtain a three-dimensional voxel structure on a regular grid. From this point, we call a measurement in the original point cloud a \emph{point} and refer to a position in the grid-based, binned point cloud as a \emph{voxel}. The bin size is dependent on the scan resolution of the robot, as it is a trade-off between resolving smaller details and decreasing SNR. In our cases, sizes of about 5\,cm were sufficient. Figures~\ref{fig:cloud}(f--h) show three examples of voxel sizes obtained from the Jacobs University's Rescue arena dataset. After the binning, the resulting regular structure contains one voxel for all bins with at least one point.
 
 In the second part of the preprocessing, derived attributes are computed that are later used to determine the set of access paths and to support their analysis. We compute the \emph{hazard distance field} (Figure~\ref{fig:overview:precomputation}) that denotes the distance to the closest hazard points for each voxel, weighted by severity. The \emph{support field} (Figure~\ref{fig:overview:precomputation}) shows the available supporting area for each voxel. This value determines whether there is enough floor available for a responder to walk without hindrance. The \emph{occupancy field} (Figure~\ref{fig:overview:precomputation}) denotes the number of points each voxel is based on. A higher occupancy means that the voxel contains more points in the original point cloud data and thus provides a higher certainty. The \emph{size field} shows for each voxel if a rescuer can fit into the space above without squeezing. We calculate two size values, one with the rescuer standing up, and a second while crouching. We also require orientation information to be able to exclude paths that would be too steep for a rescuer. For this, we compute the least-squares fitted plane based on all the points that are covered by a voxel. The normal of the plane is used for the voxel.
 
+\begin{figure*}
+    \newlength{\mywidth}
+    \setlength{\mywidth}{0.23\textwidth}
+    \centering
+    \subfigure[Unstructured, unbinned rendering]{
+        \fbox{\includegraphics[width=\mywidth]{figures/fig-rendering-points.png}}
+        \label{fig:cloud:points}
+    }
+    \hfill
+    \subfigure[Unenhanced voxelized rendering]{
+        \fbox{\includegraphics[width=\mywidth]{figures/fig-rendering-default.png}}
+        \label{fig:cloud:default}
+    }
+    \hfill
+    \subfigure[Enhanced voxelized rendering]{
+        \fbox{\includegraphics[width=\mywidth]{figures/fig-rendering-voxel.png}}
+        \label{fig:cloud:voxel}
+    }
+    \hfill
+    \subfigure[Depth-image rendering]{
+        \fbox{\includegraphics[width=\mywidth]{figures/fig-rendering-depth.png}}
+        \label{fig:cloud:depth}
+    }
+    \\
+    \subfigure[Stereoscopic full-dome rendering]{
+        \fbox{\includegraphics[width=\mywidth]{figures/fig-dome.png}}
+        \label{fig:cloud:dome}
+    }
+    \hfill
+    \subfigure[$4 \times 4 \times 4$ cm voxels]{
+        \fbox{\includegraphics[width=\mywidth]{figures/fig-rescue-4.png}}
+        \label{fig:cloud:4}
+    }
+    \hfill
+    \subfigure[$10 \times 10 \times 10$ cm voxels]{
+        \fbox{\includegraphics[width=\mywidth]{figures/fig-rescue-10.png}}
+        \label{fig:cloud:10}
+    }
+    \hfill
+    \subfigure[$25 \times 25 \times 25$ cm voxels]{
+        \fbox{\includegraphics[width=\mywidth]{figures/fig-rescue-25.png}}
+        \label{fig:cloud:25}
+    }
+    \caption{These images show different rendering techniques of the same location in the Tohoku dataset (a--d). Rendering the individual voxels as points does not allow for an immersive rendering as depth-cues are missing (a). Binning the point cloud and representing each voxel as a axis-aligned box solves this problem (b). In order to enhance the contours of the scene and produce a better immersion, we perform image-space enhancements (c). Alternatively, the \IC\ can choose a rendering method imitating the output of range imaging cameras (d). It is possible to render the point cloud in stereoscopic fisheye that can be used for dome surfaces or VR glasses. The second row of images demonstrates as the voxel size's effect during the point cloud binning in the rescue arena dataset (f--h).}
+    \label{fig:cloud}
+\end{figure*}
+
+
+%\begin{figure}
+%    \centering
+%	\subfigure[Unstructured point cloud]{
+%    	\fbox{\includegraphics[width=0.29\columnwidth]{figures/fig-rendering-points.png}}
+%    	\label{fig:cloud:points}
+%	}
+%	\hfill
+%	\subfigure[Voxelized point cloud]{
+%	    \fbox{\includegraphics[width=0.29\columnwidth]{figures/fig-rendering-voxel.png}}
+%	    \label{fig:cloud:voxel}
+%	}
+%	\hfill
+%	\subfigure[Depth-image]{
+%	    \fbox{\includegraphics[width=0.29\columnwidth]{figures/fig-rendering-depth.png}}
+%	    \label{fig:cloud:depth}
+%	}
+%	\caption{Screenshots using two different rendering techniques for the point cloud data for the identical scene and camera position. (a) shows the unstructured point cloud where each point is rendered at its correct position, but no depth cues are present in the rendering thus not facilitate easy spatial recognition. (b) shows the point cloud after the resampling has been performed and each point is rendered as an axis-aligned, opaque, and shaded box. This enhances the depth perception and allows the structure of the data to be seen.}
+%\end{figure}
+%
+%\begin{figure}
+%   \centering
+%   \subfigure[$4 \times 4 \times 4$ cm]{
+%       \fbox{\includegraphics[width=0.29\columnwidth]{figures/fig-voxelsize-4.jpg}}
+%   }
+%   \hfill
+%   \subfigure[$10 \times 10 \times 10$ cm]{
+%       \fbox{\includegraphics[width=0.29\columnwidth]{figures/fig-voxelsize-10.jpg}}
+%   }
+%   \hfill
+%   \subfigure[$25 \times 25 \times 25$ cm]{
+%       \fbox{\includegraphics[width=0.29\columnwidth]{figures/fig-voxelsize-25.jpg}}
+%    }
+%   \caption{The influence of the voxel size on a dataset scanned at the rescue arena at the Jabobs University in Bremen. The voxel size is a trade-off between higher detail and higher data uncertainty.}
+%   \label{fig:overview:precomputation:voxelsize}
+%\end{figure}
+%
 \subsection{Data Annotation} \label{sec:overview:annotation}
 It is essential to be able to classify and annotate the data interactively. In our system, each voxel can belong to one of five classes. \emph{Unclassified} is the default class and does not convey any semantics. \emph{Start} voxels are usable entry points from which paths can start. \emph{POI} voxels are destination points for a path and indicate a potential victim or another mission-critical element. \emph{Hazard} voxels have been declared as dangerous due to, for example, an ongoing fire or gas leak. \emph{Forbidden} voxels can only be declared by the \IC\ and are areas completely out of reach for traversal. The \IC\ modifies the classification for each voxel by interacting with the point cloud rendering.
 
@@ -246,11 +330,17 @@ It is essential to provide the \IC\ with detailed information about the various 
 \noindent \textbf{Scatter Plot Matrix.} The PCP is used for foreseeable comparisons. To deal with other combinations, we present the attributes in a Scatter Plot Matrix (SPLOM), where each attribute is given a row of scatter plots that show relations to all other attributes, enabling opportunistic comparisons.
 
 \subsection{3D Visualization} \label{sec:overview:3dvisualization}
-\noindent {\bfseries Point cloud visualization.} Rendering the unfiltered point cloud proved to be insufficient, as wrong depth cues due to missing occlusion inhibited the required immersion. The binned representation is beneficial, as rendering each voxel using axis-aligned boxes solves the occlusion problem (Figure~\ref{fig:teaser}(a)). We utilize a shading technique that is based on the normal of the boxes to provide a non-photorealistic rendering with exaggerated edges. As a second rendering method, we provide a simulated depth image resembling the output of range imaging cameras \IC\ are already familiar with. In order to deal with occluding objects, like a roof covering a building, the \IC\ can add and interactively modify clip planes.\\
-%
-\noindent {\bfseries Access path visualization.} In order to understand the paths' spatial relationship, it is desirable to show the paths embedded in the rendering (see Figure~\ref{fig:teaser}~(b)). In addition to using the same color as in the other components, the \IC\ can select a different coloring scheme to inspect each path attribute. Since the rendering tends to become cluttered, the user can select paths in the rendering, resulting in highlighting of these paths in the linked views and desaturation of all other paths.\\
-%
+\noindent {\bfseries Point cloud visualization.} Missing occlusion, and thus missing depth cues, is a big challenge in point cloud rendering. Rendering each point individually inhibits immersion as structures are hard to detect (Figure~\ref{fig:cloud:points}). One attempt to add occlusion is to apply stencilling to hide occluded points by rendering disk around each point orthogonal to the viewing direction. Using this approach, points will have a camera-aligned occlusion zones where no points are rendered. This fails for several reasons; the size of the occlusion zone depends on the sparseness of the data and if the zone is chosen to be too small otherwise occluded points will be visible. Second, the occlusion zone will also hide points belonging to the same structure. This leads to the structure, for example a wall, being represented only by a few points which does not reflect the reality. Utilizing a voxelized representation has proven beneficial, where each voxel is represented by an axis-aligned cube with the same size as the grid structure. Figure~\ref{fig:cloud:default} shows the result of this rendering method. This solves the occlusion problem immediately, as each voxel has an extent and occludes voxels. Only in cases with very sparse data do holes appear in the rendering. To increase the spatial awareness, we apply a lighting based on the face of the cube, rather than the normal of the voxel. See Figure~\ref{fig:cloud:default} for a rendering using our method. We decided to utilize two image-space enhancement techniques to increase the immersion. The first method, as proposed by Luft \etal~\cite{Luft06imageenhancement}, is an image-space contour-enhancement that increases local contrast in areas of high changes in depth. This allows the \IC\ to intuitively gain a better understanding of the scene by emphasizing object boundaries. The second method is a depth-based attenuation factor. The farther a voxel is from the camera the darker it will be rendered, thus providing an intuitive distance cue.
+
 \noindent \textbf{Walkthroughs.} While our renderings have the benefits of being familiar to the \IC , who is accustomed to maps, we also enable new ways of exploration. Rather than relying on a mental simulation, the \IC\ can use a virtual walk-through to inspect whether a plan might actually work. This walk-through can be steered or a path can be followed automatically.
+
+%
+%Rendering the unfiltered point cloud proved to be insufficient, as wrong depth cues due to missing occlusion inhibited the required immersion. The binned representation is beneficial, as rendering each voxel using axis-aligned boxes solves the occlusion problem (Figure~\ref{fig:teaser}(a)). We utilize a shading technique that is based on the normal of the boxes to provide a non-photorealistic rendering with exaggerated edges. As a second rendering method, we provide a simulated depth image resembling the output of range imaging cameras \IC\ are already familiar with. In order to deal with occluding objects, like a roof covering a building, the \IC\ can add and interactively modify clip planes.\\
+%
+\noindent {\bfseries Access path visualization.} In order for the \IC\ to intuitively understand the spatial relationship of paths in the point cloud data, it is useful and necessary to show the paths embedded in the point cloud rendering. Since the paths are based on the center of the voxels, it is necessary to lift each path point by at least half the voxel size in $y$ direction. In our experiments we found that increasing it by about 2-3 times the voxel size produces a good visual result without looking too detached from the ground. A post-processing is performed on the path data in which a Catmull-Rom spline~\cite{catmull1974class} is generated, using the voxels as control points. This results in a smoother path that lacks discontinuous edges that would draw unnecessary attention of the user. The \IC\ can select various coloring methods to select the different stored information about the paths. In addition to using the same color as in the other components, the \IC\ can select a different coloring scheme to inspect each path attribute or submetric. As the rendering view can become cluttered, the user can select a path in the rendering, highlighting that path in all other views and desaturating other paths. This makes it possible to inspect the exact behavior of a few paths without distraction and also allows the user to reduce the number of valid paths very quickly.
+%
+%In order to understand the paths' spatial relationship, it is desirable to show the paths embedded in the rendering (see Figure~\ref{fig:teaser}~(b)). In addition to using the same color as in the other components, the \IC\ can select a different coloring scheme to inspect each path attribute. Since the rendering tends to become cluttered, the user can select paths in the rendering, resulting in highlighting of these paths in the linked views and desaturation of all other paths.\\
+%
 \begin{figure}
 	\centering
 	\subfigure[Profile Plot]{
@@ -285,22 +375,21 @@ It is essential to provide the \IC\ with detailed information about the various 
 \begin{figure*}
 \centering
    \subfigure[A construction site with an ensemble of paths starting from a construction worker standing on the edge of the pit.] {
-       \fbox{\includegraphics[width=0.26\textwidth]{figures/tower-case-path.png}}
+       \fbox{\includegraphics[width=0.3\textwidth]{figures/tower-case-path.png}}
     \label{fig:overview:case:tower}
     }
     \hfill{}
     \subfigure[An ensemble of paths calculated in the Bremen rescue arena, which is used to test the autonomy of search \& rescue robots.] {
-        \fbox{\includegraphics[width=0.26\textwidth]{figures/rescue-case-path.png}}
+        \fbox{\includegraphics[width=0.3\textwidth]{figures/rescue-case-path.png}}
         \label{fig:overview:case:arena}
    }
    \hfill{}
-    \subfigure[An intermediate result of the path computation in the Tokohu case showing three classes of paths through the structure.]{
-        \fbox{\includegraphics[width=0.26\textwidth]{figures/fig-analysis-rendering.jpg}}
+    \subfigure[An intermediate result of the path computation in the Tohoku case showing three classes of paths through the structure.]{
+        \fbox{\includegraphics[width=0.3\textwidth]{figures/fig-analysis-rendering.jpg}}
         \label{fig:overview:analysis:paths}
     }
     \caption{Our system's rendering component during use in the application case (a) and the two test cases (b) and (c). The filtered paths are shown into the 3D rendering to provide an increased spatial awareness. Different weights for hazards lead to distinct optimal paths to the POI.}
 \end{figure*}
-
 
 Since autonomous robots are not yet used in emergency situations, it is not possible to apply our system to a real-world disaster. Instead, to illustrate the flexibility of our system, we apply the application to one application case and two test cases.
 
@@ -340,16 +429,18 @@ We received valuable feedback from the experts and we can draw the conclusion th
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Conclusions} \label{sec:conclusion}
-We presented a linked, multiple-view visualization system that optimizes the workflow of an incident commander when dealing with search \& rescue missions in cases where the initial reconnaissance of a collapsed structure is performed using unmanned vehicles. Based on this data, our system computes and analyzes an ensemble of rescue paths that are explored by the \IC , who can then select a path that is an optimal trade-off according to his experience and knowledge. To investigate the system's usefulness, we have conducted a study with experts. The resulting positive feedback makes us confident that the system has the potential to improve future search \& rescue planning missions. In addition, we presented a stereoscopic movie of the application case and the rescue arena data sets to an audience of approximately 100 researchers at an IEEE-sponsored conference on rescue robotics. We received positive informal feedback from these research experts on the rendering over the course of later discussions.
+We presented a linked, multiple-view visualization system that optimizes the workflow of an incident commander when dealing with search \& rescue missions in cases where the initial reconnaissance of a collapsed structure is performed using unmanned vehicles. Based on this data, our system computes and analyzes an ensemble of rescue paths that are explored by the \IC , who can then select a path that is an optimal trade-off according to his experience and knowledge. To investigate the system's usefulness, we have conducted a study with experts. The resulting positive feedback makes us confident that the system has the potential to improve future search \& rescue planning missions. In addition, we presented a stereoscopic movie of the application case and the rescue arena data sets to an audience of approximately 100 researchers at an IEEE-sponsored conference on rescue robotics (see Figure~\ref{fig:cloud:dome}). We received positive informal feedback from these research experts on the rendering over the course of later discussions.
 
-We like to thank the IRIDeS, the CREATE, and the IRS institutes for their cooperation in retrieving and providing the scans from Tohoku university.
+%We like to thank the IRIDeS, the CREATE, and the IRS institutes for their cooperation in retrieving and providing the scans from Tohoku university.
 
 %For future work, we like to perform a thorough in-use evaluation accompanying a real-world rescue scenario. This will provide us with valuable direct feedback to improve usability of the system. Furthermore, we plan to investigate the applicability of adaptive and stochastic sampling, like Monte-Carlo methods, on the high-dimensional parameter space for path computation.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%This work was partly supported by grants from the Excellence Center at Link\"oping and Lund in Information Technology (ELLIIT) and the Swedish e-Science Research Centre (SeRC), as well as VR grant 2011-4113. We would like to thank the external experts for taking their time to take part in the evaluation. The presented concepts have been realized using the Voreen framework (www.voreen.org).
+We like to thank the IRIDeS, the CREATE, and the IRS institutes for their cooperation in retrieving and providing the scans from Tohoku university. This work was partly supported by grants from the Excellence Center at Link\"oping and Lund in Information Technology (ELLIIT) and the Swedish e-Science Research Centre (SeRC), as well as VR grant 2011-4113.
+%We would like to thank the external experts for taking their time to take part in the evaluation.
+The presented system has been realized using the Voreen framework (www.voreen.org).
 %}
 
 %\bibliographystyle{abbrv}
